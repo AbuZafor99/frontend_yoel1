@@ -3,7 +3,7 @@ import { apiBase } from '../api/client'
 import type { Job } from '../types'
 import { Icon } from './Icon'
 
-const categoryName = (job: Job) => typeof job.categoryId === 'object' ? job.categoryId.name : job.category?.name || 'General work'
+const categoryName = (job: Job) => job.categoryId && typeof job.categoryId === 'object' ? job.categoryId.name : job.category?.name || 'General work'
 const fallbackImages = ['/app-assets/home1.png', '/app-assets/home2.png', '/app-assets/home3.png']
 
 export function statusLabel(status?: string) {

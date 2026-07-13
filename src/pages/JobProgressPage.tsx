@@ -37,8 +37,8 @@ export function JobProgressPage() {
 
   const owner = job && typeof job.userId === 'object' ? job.userId : undefined
   const assigned = job && typeof job.tradePerson === 'object' ? job.tradePerson : undefined
-  const ownerId = job ? (typeof job.userId === 'object' ? job.userId._id : job.userId) : undefined
-  const assignedId = job ? (typeof job.tradePerson === 'object' ? job.tradePerson._id : job.tradePerson) : undefined
+  const ownerId = job ? (job.userId && typeof job.userId === 'object' ? job.userId._id : job.userId) : undefined
+  const assignedId = job ? (job.tradePerson && typeof job.tradePerson === 'object' ? job.tradePerson._id : job.tradePerson) : undefined
   const isOwner = homeowner && ownerId === user?._id
   const isAssigned = !homeowner && assignedId === user?._id
   const canAccess = isOwner || isAssigned

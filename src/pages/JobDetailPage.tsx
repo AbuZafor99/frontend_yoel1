@@ -36,7 +36,7 @@ function ReviewForm({ job }: { job: Job }) {
 }
 
 function ApplicantInfoModal({ application, jobId, onClose }: { application: Application; jobId: string; onClose: () => void }) {
-  const person = typeof application.tradespersonId === 'object' ? application.tradespersonId : undefined
+  const person = application.tradespersonId && typeof application.tradespersonId === 'object' ? application.tradespersonId : undefined
   const personId = person?._id || (typeof application.tradespersonId === 'string' ? application.tradespersonId : '')
   return <Modal title="Tradesperson information" onClose={onClose}>
     <div className="applicant-profile-summary"><span className="restricted-avatar">{person?.profileImage?.url ? <img src={person.profileImage.url} alt=""/> : (person?.name || 'T').slice(0,1)}</span><div><h3>{person?.name || 'Tradesperson'}</h3><p>{person?.bio || 'Zentrofix professional'}</p><span><Icon name="star" size={14}/> {person?.ratingSummary?.avg?.toFixed(1) || 'New'} {person?.ratingSummary?.count ? `(${person.ratingSummary.count} reviews)` : ''}</span></div></div>
@@ -48,7 +48,7 @@ function ApplicantInfoModal({ application, jobId, onClose }: { application: Appl
 function ApplicantList({ applications, jobId, onDecision }: { applications: Application[]; jobId: string; onDecision: (application: Application, action: 'accept' | 'decline') => void }) {
   const [selected, setSelected] = useState<Application | null>(null)
   return <><div className="applicant-list">{applications.length ? applications.map(application => {
-    const person = typeof application.tradespersonId === 'object' ? application.tradespersonId : undefined
+    const person = application.tradespersonId && typeof application.tradespersonId === 'object' ? application.tradespersonId : undefined
     return <div className="applicant-row" key={application._id}><span className="avatar avatar-purple">{person?.profileImage?.url ? <img src={person.profileImage.url} alt=""/> : (person?.name || 'T').slice(0,1)}</span><div><strong>{person?.name || 'Tradesperson'}</strong><small>{application.additionalInfo || 'Application received'} · {application.price ? `£${application.price}` : 'Quote pending'}</small></div><span className="row-actions"><button className="button button-ghost small-button" onClick={() => setSelected(application)}>View info</button>{application.status === 'pending' && <><button className="button button-ghost small-button" onClick={() => onDecision(application,'decline')}>Decline</button><button className="button button-primary small-button" onClick={() => onDecision(application,'accept')}>Accept offer</button></>}</span></div>
   }) : <p className="muted">No applications yet. They’ll appear here as tradespeople respond.</p>}</div>{selected && <ApplicantInfoModal application={selected} jobId={jobId} onClose={() => setSelected(null)}/>}</>
 }
@@ -68,9 +68,9 @@ export function JobDetailPage() {
   if (loading) return <AppLoader label="Loading job details…" />
   if (!job) return <div className="center-state"><p>{loadError || 'Job not found'}</p><Link className="text-link" to="/jobs">Back to jobs</Link></div>
 
-  const owner = typeof job.userId === 'object' ? job.userId : undefined
-  const assigned = typeof job.tradePerson === 'object' ? job.tradePerson : undefined
-  const assignedId = typeof job.tradePerson === 'object' ? job.tradePerson._id : job.tradePerson
+  const owner = job.userId && typeof job.userId === 'object' ? job.userId : undefined
+  const assigned = job.tradePerson && typeof job.tradePerson === 'object' ? job.tradePerson : undefined
+  const assignedId = job.tradePerson && typeof job.tradePerson === 'object' ? job.tradePerson._id : job.tradePerson
   const canApply = !homeowner && job.status === 'pending'
   const progressStatuses = ['awarded','active','started','ongoing','in_progress','completed']
   const showProgress = progressStatuses.includes(job.status || '') && (homeowner || assignedId === user?._id)
@@ -89,7 +89,7 @@ export function JobDetailPage() {
     <button className="back-link" onClick={() => navigate(-1)}>← Back</button>
     <div className="detail-layout">
       <article className="detail-main">
-        <div className="detail-hero"><div><span className="eyebrow">{typeof job.categoryId === 'object' ? job.categoryId.name : 'Local job'}</span><h1>{job.title}</h1><div className="job-meta"><span><Icon name="map" size={15}/>{job.locationText || 'Location to be agreed'}</span><span><Icon name="calendar" size={15}/>{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently posted'}</span></div></div><span className={`status status-${job.status || 'pending'}`}>{statusLabel(job.status)}</span></div>
+        <div className="detail-hero"><div><span className="eyebrow">{job.categoryId && typeof job.categoryId === 'object' ? job.categoryId.name : 'Local job'}</span><h1>{job.title}</h1><div className="job-meta"><span><Icon name="map" size={15}/>{job.locationText || 'Location to be agreed'}</span><span><Icon name="calendar" size={15}/>{job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently posted'}</span></div></div><span className={`status status-${job.status || 'pending'}`}>{statusLabel(job.status)}</span></div>
         {showProgress && <section className="detail-progress-callout"><span><Icon name={job.status === 'completed' ? 'check' : 'clock'} size={22}/></span><div><h2>{job.status === 'completed' ? 'Service completed' : job.status === 'awarded' ? 'Job awarded' : 'Service is underway'}</h2><p>Open the progress screen to follow status updates and next actions.</p></div><Link className="button button-primary" to={`/jobs/${job._id}/progress`}>Track progress <Icon name="arrow" size={16}/></Link></section>}
         <section className="detail-section"><h2>About this job</h2><p className="detail-description">{job.description || 'No additional description provided.'}</p>{job.media?.length ? <div className="media-strip">{job.media.map(url => <img key={url} src={url} alt="Job attachment"/>)}</div> : null}</section>
         <section className="detail-section"><GoogleJobMap job={job}/></section>

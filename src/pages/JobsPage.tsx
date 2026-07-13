@@ -36,7 +36,7 @@ export function JobsPage() {
           setListed((await api.myJobs()).map(job => ({ job })))
         } else if (pageView === 'my') {
           const applications: Application[] = await api.applications()
-          setListed(applications.flatMap(application => typeof application.jobId === 'object' ? [{ job: application.jobId, applicationStatus: application.status }] : []))
+          setListed(applications.flatMap(application => application.jobId && typeof application.jobId === 'object' ? [{ job: application.jobId, applicationStatus: application.status }] : []))
         } else {
           // The mobile app intentionally searches a homeowner's own posted jobs.
           // The deployed API currently routes `/jobs/public` through `/:jobId`,
@@ -58,7 +58,7 @@ export function JobsPage() {
     : [['all', 'All Jobs'], ['pending', 'Applied'], ['active', 'Ongoing'], ['completed', 'Completed'], ['lost', 'Not Selected']]
 
   const visible = useMemo(() => listed.filter(({ job, applicationStatus }) => {
-    const category = typeof job.categoryId === 'object' ? job.categoryId.name : job.category?.name || ''
+    const category = job.categoryId && typeof job.categoryId === 'object' ? job.categoryId.name : job.category?.name || ''
     const matchesQuery = `${job.title} ${job.description || ''} ${job.locationText || ''} ${category}`.toLowerCase().includes(query.toLowerCase())
     const status = applicationStatus || job.status || 'pending'
     return matchesQuery && (tab === 'all' || status === tab || (tab === 'active' && ['started', 'ongoing'].includes(status)))
