@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { isHomeowner, useAuth } from '../context/AuthContext'
-import type { Job } from '../types'
+import type { Job, Review } from '../types'
 import { GoogleJobMap } from '../components/GoogleJobMap'
 import { RestrictedContactPanel } from '../components/RestrictedContactPanel'
 import { JobPaymentModal } from '../components/JobPaymentModal'
@@ -32,8 +32,14 @@ export function JobProgressPage() {
   const [updating, setUpdating] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [error, setError] = useState('')
+  const [myReview, setMyReview] = useState<Review | null>(null)
 
   useEffect(() => { api.job(id).then(setJob).catch(caught => setError(caught instanceof Error ? caught.message : 'Could not load job progress')).finally(() => setLoading(false)) }, [id])
+
+  useEffect(() => {
+    if (!job || job.status !== 'completed') { setMyReview(null); return }
+    api.jobReviews(job._id).then(reviews => setMyReview(reviews.find(review => review.userId === user?._id) || null)).catch(() => undefined)
+  }, [job?._id, job?.status, user?._id])
 
   const owner = job && typeof job.userId === 'object' ? job.userId : undefined
   const assigned = job && typeof job.tradePerson === 'object' ? job.tradePerson : undefined
@@ -85,7 +91,8 @@ export function JobProgressPage() {
         <div><span>{stage >= 3 ? 'Completed' : paymentRequired ? 'Action required' : `Stage ${stage} of 3`}</span><h2>{statusCopy.title}</h2><p>{statusCopy.text}</p></div>
         {paymentRequired && isAssigned && <button className="button button-primary" onClick={() => setPaymentOpen(true)}><Icon name="creditCard" size={17}/> Pay $10 and activate</button>}
         {canAdvance && <button className="button button-primary" disabled={updating} onClick={advance}>{updating ? <><span className="button-spinner"/> Updating…</> : <>{nextStage === 1 ? 'Start service' : nextStage === 2 ? 'Mark in progress' : 'Complete service'} <Icon name="arrow" size={16}/></>}</button>}
-        {stage >= 3 && canAccess && <Link className="button button-primary" to={`/jobs/${job._id}`}>Leave a review <Icon name="arrow" size={16}/></Link>}
+        {stage >= 3 && canAccess && !myReview && <Link className="button button-primary" to={`/jobs/${job._id}`}>Leave a review <Icon name="arrow" size={16}/></Link>}
+        {stage >= 3 && canAccess && myReview && <Link className="button button-ghost" to={`/jobs/${job._id}`}>View your review <Icon name="arrow" size={16}/></Link>}
       </section>
 
       <section className="progress-tracker-card">

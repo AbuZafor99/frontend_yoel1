@@ -1,0 +1,38 @@
+/* ── KYC / identity verification ─────────────────────────────────────────── */
+
+/* Dashboard banner for unverified tradespeople — red border to draw attention. */
+.kyc-alert { display: flex; align-items: center; gap: 13px; margin-top: 18px; padding: 15px 18px; border: 1.5px solid #fca5a5; border-radius: 16px; background: #fef2f2; box-shadow: 0 8px 20px rgba(220, 38, 38, 0.08); }
+.kyc-alert-icon { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: #dc2626; background: #fee2e2; }
+.kyc-alert > div { min-width: 0; flex: 1; }
+.kyc-alert .verify-anchor { flex: 0 0 auto; margin-left: auto; }
+.kyc-alert strong { display: block; font-size: 0.82rem; color: #991b1b; }
+.kyc-alert small { display: block; margin-top: 2px; font-size: 0.7rem; color: #b91c1c; }
+.kyc-alert-action { flex: 0 0 auto; padding: 9px 16px; border-radius: 9px; background: #2563eb; color: #fff; font-size: 0.74rem; font-weight: 700; transition: background 0.18s ease; }
+.kyc-alert-action:hover { background: #1d4ed8; }
+
+/* Profile identity: red "not verified" badge + verify action (over the dark card). */
+.profile-unverified { display: flex; flex-direction: column; align-items: center; gap: 9px; margin-top: 14px; }
+.unverified-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 999px; background: #fee2e2; color: #b42318; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.02em; }
+.profile-verify-now { display: inline-flex; align-items: center; gap: 5px; padding: 8px 15px; border-radius: 9px; background: #dc2626; color: #fff; font-size: 0.68rem; font-weight: 700; transition: background 0.18s ease; }
+.profile-verify-now:hover { background: #b91c1c; }
+
+/* Mini "Verify Now" popover — anchored to the button, not a full-screen modal. */
+.verify-anchor { position: relative; display: inline-flex; }
+.verify-popover { position: absolute; z-index: 60; top: calc(100% + 9px); right: 0; width: 250px; max-width: min(250px, calc(100vw - 32px)); padding: 14px; border: 1px solid #e2e8f0; border-radius: 14px; text-align: left; color: #111827; background: #fff; box-shadow: 0 18px 44px rgba(15, 34, 58, 0.22); animation: verify-pop-in 0.16s ease both; }
+.verify-popover::before { content: ''; position: absolute; top: -6px; right: 22px; width: 12px; height: 12px; border-left: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; background: #fff; transform: rotate(45deg); }
+.verify-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.verify-popover-head strong { font-size: 0.82rem; color: #0f223a; }
+.verify-popover-close { width: 24px; height: 24px; margin: -4px -4px 0 0; border-radius: 7px; color: #64748b; font-size: 1.2rem; line-height: 1; }
+.verify-popover-close:hover { background: #f1f5f9; }
+.verify-popover > p { margin: 6px 0 0; font-size: 0.7rem; line-height: 1.45; color: #64748b; }
+
+/* Store-link badges — stacked inside the compact popover. */
+.store-badges { display: flex; flex-direction: column; gap: 9px; margin-top: 13px; }
+.store-badge { display: inline-flex; align-items: center; gap: 10px; padding: 9px 13px; border-radius: 11px; color: #fff; background: #111827; transition: transform 0.16s ease, background 0.16s ease; }
+.store-badge:hover { transform: translateY(-1px); background: #000; }
+.store-badge span { display: flex; flex-direction: column; line-height: 1.12; }
+.store-badge small { font-size: 0.56rem; opacity: 0.82; }
+.store-badge strong { font-size: 0.86rem; font-weight: 700; }
+
+@keyframes verify-pop-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .verify-popover { animation: none; } .store-badge:hover { transform: none; } }

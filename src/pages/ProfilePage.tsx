@@ -5,6 +5,7 @@ import { isHomeowner, useAuth } from '../context/AuthContext'
 import { showSnackbar } from '../components/FeedbackHost'
 import { LocationPickerModal, type PickedLocation } from '../components/LocationPickerModal'
 import { Icon } from '../components/Icon'
+import { ProfileVerificationStatus } from '../components/KycBanner'
 
 export function ProfilePage() {
   const { user, refresh } = useAuth()
@@ -78,7 +79,7 @@ export function ProfilePage() {
           <i className="profile-avatar-edit">{uploadingAvatar ? <span className="button-spinner" /> : <Icon name="camera" size={16} />}</i>
         </button>
         <input ref={avatarInput} type="file" accept="image/*" hidden onChange={uploadAvatar} />
-        <h2>{user?.name || 'Zentrofix member'}</h2><p>{user?.email}</p><span className="role-chip inline">{isHomeowner(user?.role) ? 'Homeowner' : 'Tradesperson'}</span>{user?.isKycVerified && <span className="verified-label">✓ Identity verified</span>}
+        <h2>{user?.name || 'Zentrofix member'}</h2><p>{user?.email}</p><span className="role-chip inline">{isHomeowner(user?.role) ? 'Homeowner' : 'Tradesperson'}</span>{isHomeowner(user?.role) ? (user?.isKycVerified && <span className="verified-label">✓ Identity verified</span>) : <ProfileVerificationStatus verified={user?.isKycVerified} />}
       </aside>
       <form className="profile-form panel" onSubmit={submit}><div className="section-heading"><div><h2>Personal information</h2><p className="muted">Your information is only used to support your Zentrofix work.</p></div></div><div className="form-grid"><label>Name<input value={body.name} onChange={update('name')} /></label><label>Phone<input value={body.phone} onChange={update('phone')} /></label><label>Address<button type="button" className={`map-location-field ${body.address ? 'selected' : ''}`} onClick={() => setShowLocationPicker(true)}><Icon name="map" size={18}/><span>{body.address || 'Choose location on map'}</span><Icon name="arrow" size={16}/></button></label>{!isHomeowner(user?.role) && <label>Service area<input value={body.serviceArea} onChange={update('serviceArea')} placeholder="e.g. North London" /></label>}<label className="span-2">Bio<textarea value={body.bio} onChange={update('bio')} placeholder="A little about you and your work" /></label><button className="button button-primary" disabled={saving}>{saving ? <><span className="button-spinner"/> Saving…</> : 'Save changes'}</button></div></form>
     </div>

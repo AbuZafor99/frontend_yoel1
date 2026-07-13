@@ -1,0 +1,92 @@
+/* Guest (logged-out) landing — web port of the app's GuestHomeScreen.
+   Palette mirrors the app: #B1DFFF→#EEF8FF gradient, #1E40AF primary,
+   #16A34A accent, #0D1B3E banner navy. */
+
+.guest-home { min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(180deg, #b1dfff, #eef8ff 46%, #eef8ff); color: #111827; }
+
+/* Header */
+.guest-header { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px clamp(16px, 5vw, 40px); background: rgba(238, 248, 255, 0.82); backdrop-filter: blur(10px); }
+.guest-logo img { height: 34px; display: block; }
+.guest-signin { padding: 10px 20px; border-radius: 30px; background: #1e40af; color: #fff; font-size: 0.78rem; font-weight: 800; box-shadow: 0 8px 20px rgba(30, 64, 175, 0.28); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.guest-signin:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(30, 64, 175, 0.34); }
+
+.guest-main { flex: 1; width: 100%; max-width: 1080px; margin: 0 auto; padding: 22px clamp(16px, 5vw, 40px) 40px; display: flex; flex-direction: column; gap: 30px; }
+
+/* Banner carousel */
+.guest-banner { position: relative; }
+.guest-banner-track { display: flex; border-radius: 20px; overflow: hidden; transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1); box-shadow: 0 18px 40px rgba(13, 27, 62, 0.25); }
+.guest-banner-slide { position: relative; flex: 0 0 100%; min-height: 190px; display: block; background: #0d1b3e; overflow: hidden; }
+.guest-banner-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.guest-banner-overlay { position: absolute; inset: 0; background: linear-gradient(100deg, #0d1b3e 0%, rgba(13, 27, 62, 0.85) 50%, rgba(13, 27, 62, 0.3) 100%); }
+.guest-banner-copy { position: relative; z-index: 2; height: 100%; min-height: 190px; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 26px clamp(22px, 4vw, 40px); }
+.guest-banner-badge { align-self: flex-start; padding: 4px 11px; border-radius: 20px; background: #4ade80; color: #0d1b3e; font-size: 0.7rem; font-weight: 800; }
+.guest-banner-copy h3 { margin: 0; color: #fff; font-size: clamp(1.25rem, 3.4vw, 1.7rem); font-weight: 900; line-height: 1.12; letter-spacing: 0.01em; }
+.guest-banner-copy p { margin: 0; color: rgba(255, 255, 255, 0.86); font-size: 0.86rem; font-weight: 500; max-width: 60ch; }
+.guest-banner-brand { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; color: #fff; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.18em; }
+.guest-banner-brand img { width: 24px; height: 24px; border-radius: 7px; }
+.guest-banner-dots { display: flex; justify-content: center; gap: 8px; margin-top: 13px; }
+.guest-banner-dots button { width: 8px; height: 8px; padding: 0; border-radius: 4px; background: #cbd5e1; transition: width 0.3s ease, background 0.3s ease; }
+.guest-banner-dots button.active { width: 22px; background: #1e40af; }
+
+/* Section scaffolding */
+.guest-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.guest-section-head h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #111827; }
+.guest-section-note { font-size: 0.76rem; font-weight: 700; color: #16a34a; text-align: right; }
+.guest-see-all { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #1e40af; }
+.guest-empty { padding: 22px; color: #6b7280; font-size: 0.86rem; text-align: center; }
+
+/* Latest jobs rail */
+.guest-job-rail { display: flex; gap: 15px; overflow-x: auto; padding: 4px 2px 12px; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.guest-job-rail::-webkit-scrollbar { display: none; }
+.guest-job-card { flex: 0 0 210px; scroll-snap-align: start; display: flex; flex-direction: column; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 26px rgba(13, 27, 62, 0.1); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.guest-job-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(13, 27, 62, 0.16); }
+.guest-job-photo { height: 122px; background: #e5edf6; overflow: hidden; }
+.guest-job-photo img { width: 100%; height: 100%; object-fit: cover; }
+.guest-job-body { display: flex; flex-direction: column; gap: 3px; padding: 11px 12px 13px; }
+.guest-job-body strong { font-size: 0.9rem; font-weight: 800; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guest-job-body small { font-size: 0.76rem; color: #6b7280; }
+.guest-job-budget { margin-top: 2px; font-size: 0.82rem; font-weight: 800; color: #1e40af; }
+.guest-job-location { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; color: #9ca3af; }
+.guest-job-card.skeleton { pointer-events: none; }
+.guest-job-card.skeleton .guest-job-photo { background: #e8eef5; }
+.guest-job-card .sk { display: block; border-radius: 6px; background: linear-gradient(90deg, #eef2f7, #e2e8f0, #eef2f7); background-size: 200% 100%; animation: guest-shimmer 1.3s linear infinite; }
+.sk-title { height: 13px; width: 82%; } .sk-line { height: 10px; width: 55%; } .sk-price { height: 12px; width: 40%; }
+@keyframes guest-shimmer { to { background-position: -200% 0; } }
+
+/* Why choose */
+.guest-why-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.guest-why-card { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 16px 8px; background: rgba(255, 255, 255, 0.62); border-radius: 16px; text-align: center; }
+.guest-why-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; }
+.guest-why-icon.tone-blue { background: #eff6ff; color: #1e40af; }
+.guest-why-icon.tone-green { background: #f0fdf4; color: #16a34a; }
+.guest-why-card small { font-size: 0.74rem; font-weight: 600; color: #374151; line-height: 1.35; }
+
+/* How it works */
+.guest-steps { display: flex; align-items: flex-start; gap: 4px; }
+.guest-step-wrap { display: contents; }
+.guest-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.guest-step-mark { position: relative; width: 54px; height: 54px; display: grid; place-items: center; border-radius: 14px; background: #fff; color: #1e40af; box-shadow: 0 8px 18px rgba(13, 27, 62, 0.1); }
+.guest-step-mark b { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #16a34a; color: #fff; font-size: 0.68rem; font-weight: 800; }
+.guest-step strong { font-size: 0.8rem; font-weight: 800; color: #111827; }
+.guest-step small { font-size: 0.7rem; color: #6b7280; line-height: 1.3; max-width: 15ch; }
+.guest-step-arrow { flex: 0 0 auto; margin-top: 18px; color: #9ca3af; }
+
+/* CTA */
+.guest-cta { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 34px 24px; border-radius: 22px; background: linear-gradient(135deg, #1e40af, #0d1b3e); color: #fff; text-align: center; box-shadow: 0 20px 44px rgba(13, 27, 62, 0.28); }
+.guest-cta h2 { margin: 0; font-size: clamp(1.2rem, 3vw, 1.55rem); font-weight: 800; }
+.guest-cta p { margin: 0; max-width: 52ch; color: rgba(255, 255, 255, 0.86); font-size: 0.88rem; }
+.guest-cta .button { margin-top: 6px; }
+
+@media (max-width: 640px) {
+  .guest-why-grid { grid-template-columns: repeat(2, 1fr); }
+  .guest-steps { flex-wrap: wrap; gap: 18px 4px; }
+  .guest-step { flex: 0 0 calc(50% - 2px); }
+  .guest-step-arrow { display: none; }
+  .guest-job-card { flex-basis: 168px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guest-banner-track { transition: none; }
+  .guest-job-card:hover { transform: none; }
+  .guest-job-card .sk { animation: none; }
+}

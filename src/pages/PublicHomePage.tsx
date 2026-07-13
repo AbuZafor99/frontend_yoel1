@@ -1,65 +1,140 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
-import type { Category, Job } from '../types'
-import { JobCard } from '../components/JobCard'
+import type { CarouselItem, Job } from '../types'
+import { jobImage } from '../components/JobCard'
 import { Icon } from '../components/Icon'
+import { Footer } from '../components/Footer'
+
+// Web counterpart of the app's GuestHomeScreen — the default landing shown to
+// logged-out visitors. Browsing (banner carousel + latest jobs) works without an
+// account; anything account-scoped (a job's details) sends the visitor to login.
+
+const whyChoose = [
+  { icon: 'shield' as const, tone: 'blue', label: 'Quality Work You Can Trust' },
+  { icon: 'users' as const, tone: 'green', label: 'Local Professionals You Can Count On' },
+  { icon: 'lock' as const, tone: 'blue', label: 'Safe, Secure & Easy to Use' },
+  { icon: 'home' as const, tone: 'blue', label: 'Better Connections, Better Homes' },
+]
+
+const howItWorks = [
+  { icon: 'message' as const, title: 'Post Your Job', subtitle: 'Tell us what you need done.' },
+  { icon: 'search' as const, title: 'Find Pros', subtitle: 'Browse trusted professionals.' },
+  { icon: 'shield' as const, title: 'Review & Hire', subtitle: 'Choose verified pros with reviews.' },
+  { icon: 'check' as const, title: 'Get It Done', subtitle: 'Sit back and enjoy quality work.' },
+]
+
+function BannerCarousel({ items }: { items: CarouselItem[] }) {
+  const [active, setActive] = useState(0)
+  useEffect(() => {
+    if (items.length < 2) return
+    const timer = window.setInterval(() => setActive(current => (current + 1) % items.length), 4000)
+    return () => window.clearInterval(timer)
+  }, [items.length])
+  if (!items.length) return null
+  const current = Math.min(active, items.length - 1)
+  return <section className="guest-banner">
+    <div className="guest-banner-track" style={{ transform: `translateX(-${current * 100}%)` }}>
+      {items.map(item => {
+        const discount = item.type === 'coupon' && item.discountPercentage ? item.discountPercentage : null
+        const slide = <>
+          {item.image?.url && <img className="guest-banner-photo" src={item.image.url} alt="" />}
+          <div className="guest-banner-overlay" />
+          <div className="guest-banner-copy">
+            {discount ? <span className="guest-banner-badge">{discount}% OFF</span> : null}
+            <h3>{item.title}</h3>
+            {item.subtitle ? <p>{item.subtitle}</p> : null}
+            <span className="guest-banner-brand"><img src="/zentrofix-app-icon.png" alt="" />ZENTROFIX</span>
+          </div>
+        </>
+        return item.link
+          ? <a key={item._id} className="guest-banner-slide" href={item.link} target="_blank" rel="noreferrer">{slide}</a>
+          : <div key={item._id} className="guest-banner-slide">{slide}</div>
+      })}
+    </div>
+    {items.length > 1 && <div className="guest-banner-dots">
+      {items.map((item, index) => <button key={item._id} className={index === current ? 'active' : ''} aria-label={`Go to slide ${index + 1}`} onClick={() => setActive(index)} />)}
+    </div>}
+  </section>
+}
+
+function GuestJobCard({ job }: { job: Job }) {
+  const categoryName = job.categoryId && typeof job.categoryId === 'object' ? job.categoryId.name : job.category?.name
+  // Links into the protected job route → the auth gate redirects guests to
+  // login, matching the app's "log in to view job details" prompt.
+  return <Link to={`/jobs/${job._id}`} className="guest-job-card">
+    <div className="guest-job-photo"><img src={jobImage(job)} alt="" /></div>
+    <div className="guest-job-body">
+      <strong>{job.title}</strong>
+      <small>{categoryName || 'General work'}</small>
+      <span className="guest-job-budget">{job.budget ? `£${job.budget}` : 'Quote requested'}</span>
+      <span className="guest-job-location"><Icon name="map" size={13}/>{job.locationText || '—'}</span>
+    </div>
+  </Link>
+}
 
 export function PublicHomePage() {
-  const navigate = useNavigate()
   const [jobs, setJobs] = useState<Job[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [query, setQuery] = useState('')
-  const [error, setError] = useState('')
-  useEffect(() => {
-    api.categories().then(setCategories).catch(() => undefined)
-    api.publicJobs('?page=1&limit=6', true).then(setJobs).catch(caught => {
-      // Older deployed backends do not yet expose `/jobs/public`; keep the
-      // landing page usable and show a neutral placeholder instead of an ID error.
-      if (!(caught instanceof Error) || !/invalid id/i.test(caught.message)) setError(caught instanceof Error ? caught.message : 'Could not load jobs')
-    })
-  }, [])
-  const search = (event: React.FormEvent) => { event.preventDefault(); navigate(`/auth?intent=search&query=${encodeURIComponent(query)}`) }
+  const [banners, setBanners] = useState<CarouselItem[]>([])
+  const [jobsLoading, setJobsLoading] = useState(true)
 
-  return <div className="public-page">
-    <header className="public-nav">
-      <Link className="public-logo" to="/"><img src="/app-assets/homeLogo.png" alt="Zentrofix" /></Link>
-      <nav><a href="#how-it-works">How it works</a><a href="#jobs">Browse jobs</a><a href="#services">Services</a></nav>
-      <div><Link className="button button-ghost" to="/auth?mode=login">Sign in</Link><Link className="button button-primary" to="/auth?mode=register">Get started <Icon name="arrow" size={16}/></Link></div>
+  useEffect(() => {
+    api.carousels(true).then(response => setBanners(response.items || [])).catch(() => undefined)
+    api.publicJobs('?page=1&limit=10', true)
+      .then(setJobs)
+      .catch(() => undefined)
+      .finally(() => setJobsLoading(false))
+  }, [])
+
+  return <div className="guest-home">
+    <header className="guest-header">
+      <Link className="guest-logo" to="/"><img src="/app-assets/homeLogo.png" alt="Zentrofix" /></Link>
+      <Link className="guest-signin" to="/auth?mode=login">Log In / Sign Up</Link>
     </header>
 
-    <main>
-      <section className="public-hero">
-        <div className="public-hero-copy">
-          <span className="hero-kicker"><Icon name="shield" size={16}/> Trusted local professionals</span>
-          <h1>Get your home jobs done with confidence.</h1>
-          <p>Post the work you need, connect with skilled local tradespeople and manage every step in one simple place.</p>
-          <form className="search-hero" onSubmit={search}><Icon name="search" size={20}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="What do you need help with?" /><button className="button button-primary">Find help</button></form>
-          <div className="hero-proof"><span><Icon name="check" size={15}/> Verified professionals</span><span><Icon name="check" size={15}/> Secure conversations</span><span><Icon name="check" size={15}/> Clear job progress</span></div>
+    <main className="guest-main">
+      <BannerCarousel items={banners} />
+
+      <section className="guest-section">
+        <div className="guest-section-head"><h2>Latest Jobs</h2><Link className="guest-see-all" to="/auth?intent=browse">See all <Icon name="arrow" size={15}/></Link></div>
+        {jobsLoading
+          ? <div className="guest-job-rail">{[0, 1, 2].map(index => <div key={index} className="guest-job-card skeleton"><div className="guest-job-photo"/><div className="guest-job-body"><span className="sk sk-title"/><span className="sk sk-line"/><span className="sk sk-price"/></div></div>)}</div>
+          : jobs.length
+            ? <div className="guest-job-rail">{jobs.map(job => <GuestJobCard key={job._id} job={job} />)}</div>
+            : <p className="guest-empty">No jobs available right now.</p>}
+      </section>
+
+      <section className="guest-section">
+        <div className="guest-section-head"><h2>Why Choose Zentrofix?</h2><span className="guest-section-note">Verified &amp; Trusted Professionals</span></div>
+        <div className="guest-why-grid">
+          {whyChoose.map(item => <div className="guest-why-card" key={item.label}>
+            <span className={`guest-why-icon tone-${item.tone}`}><Icon name={item.icon} size={26}/></span>
+            <small>{item.label}</small>
+          </div>)}
         </div>
-        <div className="public-hero-visual">
-          <img src="/app-assets/home1.png" alt="A home project completed by a local professional" />
-          <div className="visual-rating"><span><Icon name="star" size={18}/></span><div><strong>Trusted by local customers</strong><small>Quality work, clearly reviewed</small></div></div>
-          <div className="visual-match"><span><Icon name="users" size={20}/></span><div><strong>Professionals near you</strong><small>Matched to your job and location</small></div></div>
+      </section>
+
+      <section className="guest-section">
+        <div className="guest-section-head"><h2>How It Works</h2></div>
+        <div className="guest-steps">
+          {howItWorks.map((step, index) => <div className="guest-step-wrap" key={step.title}>
+            <div className="guest-step">
+              <span className="guest-step-mark"><Icon name={step.icon} size={24}/><b>{index + 1}</b></span>
+              <strong>{step.title}</strong>
+              <small>{step.subtitle}</small>
+            </div>
+            {index < howItWorks.length - 1 && <span className="guest-step-arrow"><Icon name="arrow" size={16}/></span>}
+          </div>)}
         </div>
       </section>
 
-      <section className="public-section" id="jobs">
-        <div className="public-section-heading"><div><span className="eyebrow">Open opportunities</span><h2>Recent jobs in the community</h2><p>See the kind of work moving through Zentrofix every day.</p></div><Link className="text-link" to="/auth?intent=browse">Browse all jobs <Icon name="arrow" size={16}/></Link></div>
-        {jobs.length ? <div className="public-job-grid">{jobs.map(job => <JobCard key={job._id} job={job} compact />)}</div> : <div className="public-placeholder">{error ? 'Jobs could not be loaded. Please try again shortly.' : 'New opportunities will appear here shortly.'}</div>}
-      </section>
-
-      <section className="public-section public-services" id="services">
-        <div className="public-section-heading"><div><span className="eyebrow">Find the right expertise</span><h2>Start with a service</h2></div></div>
-        <div className="category-grid">{categories.slice(0, 6).map(category => <Link to={`/auth?intent=browse&category=${category._id}`} className="category-tile" key={category._id}><span className="category-icon"><Icon name="sparkle" size={20}/></span><strong>{category.name}</strong><small>Find specialists in your area</small><Icon name="arrow" size={17}/></Link>)}</div>
-      </section>
-
-      <section className="public-how" id="how-it-works">
-        <div className="public-how-copy"><span className="eyebrow">Simple from start to finish</span><h2>One clear workflow for better local work.</h2><p>Everything stays connected—from the first job post to the final review.</p><Link className="button button-light" to="/auth?mode=register">Create your free account <Icon name="arrow" size={16}/></Link></div>
-        <div className="public-step-list">{[['01','Post your job','Share the details, budget and location.'],['02','Choose with confidence','Compare responses and talk securely.'],['03','Follow the work','Track progress and leave a trusted review.']].map(([number,title,text]) => <article key={number}><span>{number}</span><div><strong>{title}</strong><small>{text}</small></div></article>)}</div>
+      <section className="guest-cta">
+        <h2>Ready to get your home jobs done?</h2>
+        <p>Join Zentrofix to post jobs, message trusted local professionals and track every step.</p>
+        <Link className="button button-primary" to="/auth?mode=register">Get started <Icon name="arrow" size={16}/></Link>
       </section>
     </main>
 
-    <footer className="public-footer"><img src="/app-assets/homeLogo.png" alt="Zentrofix"/><span>Better connections for better homes.</span><span>© {new Date().getFullYear()} Zentrofix</span></footer>
+    <Footer/>
   </div>
 }

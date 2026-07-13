@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { isHomeowner, useAuth } from '../context/AuthContext'
-import type { CarouselItem, Category, Conversation, Job } from '../types'
+import type { CarouselItem, Conversation, Job } from '../types'
 import { JobCard } from '../components/JobCard'
 import { EmptyState } from '../components/EmptyState'
-import { PostJobModal } from '../components/PostJobModal'
 import { Icon } from '../components/Icon'
 import { HorizontalJobRail } from '../components/HorizontalJobRail'
 import { AppLoader } from '../components/AppLoader'
+import { KycUnverifiedBanner } from '../components/KycBanner'
 
 const homeownerSlides: CarouselItem[] = [
   { _id: 'owner-1', title: 'The right professional for every job.', subtitle: 'Post your project, compare trusted local professionals and manage everything in one place.', image: { url: '/app-assets/home1.png' } },
@@ -42,37 +42,24 @@ function RecentMessages({ conversations, userId }: { conversations: Conversation
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const homeowner = isHomeowner(user?.role)
   const [jobs, setJobs] = useState<Job[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [conversations, setConversations] = useState<Conversation[]>([])
   const fallbackSlides = homeowner ? homeownerSlides : tradespersonSlides
   const [slides, setSlides] = useState<CarouselItem[]>(fallbackSlides)
   const [slide, setSlide] = useState(0)
-  const [showPost, setShowPost] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (searchParams.get('postJob') === '1' && homeowner) {
-      setShowPost(true)
-      navigate('/dashboard', { replace: true })
-    }
-  }, [homeowner, navigate, searchParams])
 
   useEffect(() => {
     setSlides(homeowner ? homeownerSlides : tradespersonSlides)
     setSlide(0)
     Promise.all([
       homeowner ? api.myJobs() : api.nearJobs('?page=1&limit=10'),
-      api.categories(),
       api.conversations(true).catch(() => []),
       api.carousels(true).catch(() => ({ items: [] })),
-    ]).then(([nextJobs, nextCategories, nextConversations, carousel]) => {
+    ]).then(([nextJobs, nextConversations, carousel]) => {
       setJobs(nextJobs)
-      setCategories(nextCategories)
       setConversations(nextConversations)
       if (carousel.items?.length) setSlides(carousel.items)
     }).catch(caught => setError(caught instanceof Error ? caught.message : 'Could not load home')).finally(() => setLoading(false))
@@ -104,11 +91,11 @@ export function DashboardPage() {
       <div className="carousel-dots">{slides.map((item, index) => <button key={item._id} className={index === slide ? 'active' : ''} onClick={() => setSlide(index)} aria-label={`Slide ${index + 1}`} />)}</div>
     </section>
 
-    {!homeowner && !user?.isKycVerified && <Link to="/profile" className="kyc-banner"><span><Icon name="shield" size={20}/></span><div><strong>Complete your verification</strong><small>Verify your profile to build trust and access every job feature.</small></div><Icon name="arrow" size={18}/></Link>}
+    {!homeowner && !user?.isKycVerified && <KycUnverifiedBanner />}
 
     <section className="home-section jobs-rail-section">
       <div className="app-section-title"><h2>{homeowner ? 'My Jobs' : 'Job Near You'}</h2><Link to={homeowner ? '/jobs?view=my' : '/jobs?view=discover'}>View All</Link></div>
-      {loading ? <AppLoader label={homeowner ? 'Loading your jobs…' : 'Finding jobs near you…'} /> : jobs.length ? <HorizontalJobRail label={homeowner ? 'My jobs' : 'Jobs near you'}>{jobs.slice(0, 10).map(job => <JobCard job={job} progressAware={homeowner} key={job._id} />)}</HorizontalJobRail> : <EmptyState title={error ? 'Jobs could not be loaded' : homeowner ? 'No jobs yet' : 'No nearby jobs yet'} text={error ? 'Please try again in a moment.' : homeowner ? 'Post your first job and local professionals can start responding.' : 'New work near your service area will appear here.'} action={homeowner ? <button className="button button-primary" onClick={() => setShowPost(true)}>Post a job</button> : undefined} />}
+      {loading ? <AppLoader label={homeowner ? 'Loading your jobs…' : 'Finding jobs near you…'} /> : jobs.length ? <HorizontalJobRail label={homeowner ? 'My jobs' : 'Jobs near you'}>{jobs.slice(0, 10).map(job => <JobCard job={job} progressAware={homeowner} key={job._id} />)}</HorizontalJobRail> : <EmptyState title={error ? 'Jobs could not be loaded' : homeowner ? 'No jobs yet' : 'No nearby jobs yet'} text={error ? 'Please try again in a moment.' : homeowner ? 'Post your first job and local professionals can start responding.' : 'New work near your service area will appear here.'} action={homeowner ? <Link className="button button-primary" to="/jobs/new">Post a job</Link> : undefined} />}
     </section>
 
     <RecentMessages conversations={conversations} userId={user?._id} />
@@ -122,7 +109,5 @@ export function DashboardPage() {
       <div className="centered-section-title"><h2>How It Works</h2><p>{homeowner ? 'Post a job and choose the right professional in four simple steps.' : 'Find suitable work and build your reputation in four simple steps.'}</p></div>
       <div className="app-step-grid">{steps.map(([title, text], index) => <article key={title}><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{title}</h3><p>{text}</p></div>{index < steps.length - 1 && <i><Icon name="arrow" size={18}/></i>}</article>)}</div>
     </section>
-
-    {showPost && <PostJobModal categories={categories} onClose={() => setShowPost(false)} onSaved={job => { setJobs(current => [job, ...current]); setShowPost(false) }} />}
   </>
 }

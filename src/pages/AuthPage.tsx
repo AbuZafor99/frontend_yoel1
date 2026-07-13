@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -24,8 +24,16 @@ function RolePicker({ role, onChange, compact = false }: { role: AuthRole; onCha
 export function AuthPage() {
   const params = new URLSearchParams(useLocation().search)
   const navigate = useNavigate()
-  const { user, login, googleLogin, register } = useAuth()
+  const { user, login, googleLogin, register, clearSessionExpired } = useAuth()
   const [mode, setMode] = useState<AuthMode>(params.get('mode') === 'register' ? 'register' : 'login')
+  // Arriving here consumes any "session expired" state so a later visit to `/`
+  // shows the guest landing page again instead of bouncing back to login. When
+  // the root gate sent us here because the token expired, say so plainly.
+  const expired = params.get('reason') === 'expired'
+  useEffect(() => {
+    clearSessionExpired()
+    if (expired) showSnackbar('Your session has expired. Please sign in again.', 'info')
+  }, [clearSessionExpired, expired])
   const [role, setRole] = useState<AuthRole>('homeowner')
   // Held in a ref so the Google callback identity stays stable across role
   // changes — otherwise picking a role re-renders the Google button (a visible

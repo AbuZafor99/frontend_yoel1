@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { isHomeowner, useAuth } from '../context/AuthContext'
 import type { Application, Category, Job } from '../types'
 import { JobCard, MyJobCard } from '../components/JobCard'
 import { EmptyState } from '../components/EmptyState'
-import { PostJobModal } from '../components/PostJobModal'
 import { Icon } from '../components/Icon'
 import { AppLoader } from '../components/AppLoader'
 
@@ -20,7 +19,6 @@ export function JobsPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [tab, setTab] = useState('all')
   const [query, setQuery] = useState('')
-  const [showPost, setShowPost] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -67,7 +65,7 @@ export function JobsPage() {
   return <>
     <div className="app-screen-heading">
       <div><span>{pageView === 'my' ? 'Your work' : 'Search and discover'}</span><h1>{pageView === 'my' ? 'My Jobs' : homeowner ? 'Discover' : 'Jobs Near You'}</h1><p>{pageView === 'my' ? 'Follow every job from the first response through completion.' : homeowner ? 'Quickly search and find the jobs you have posted.' : 'Browse image-led job posts using the same information shown in the app.'}</p></div>
-      {homeowner && <button className="button button-primary" onClick={() => setShowPost(true)}><Icon name="plus" size={17}/> Post a job</button>}
+      {homeowner && <Link className="button button-primary" to="/jobs/new"><Icon name="plus" size={17}/> Post a job</Link>}
     </div>
 
     <div className="app-jobs-toolbar">
@@ -81,7 +79,5 @@ export function JobsPage() {
       ? <div className="my-jobs-list">{visible.map(({ job, applicationStatus }) => <MyJobCard key={`${job._id}-${applicationStatus || ''}`} job={job} applicationStatus={applicationStatus} />)}</div>
       : <div className="discover-job-grid">{visible.map(({ job }) => <JobCard key={job._id} job={job} progressAware={homeowner} />)}</div>
       : <EmptyState icon="▣" title={error ? 'Jobs could not be loaded' : 'No matching jobs'} text={error ? 'Please try again in a moment.' : 'Try a different filter or search phrase.'} action={<button className="button button-ghost" onClick={() => { setQuery(''); setTab('all') }}>Clear filters</button>} />}
-
-    {showPost && <PostJobModal categories={categories} onClose={() => setShowPost(false)} onSaved={job => { setListed(current => [{ job }, ...current]); setShowPost(false) }} />}
   </>
 }

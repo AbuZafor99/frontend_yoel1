@@ -46,8 +46,8 @@ export const api = {
   resendOtp: async (email: string) => data(await request<unknown>('/auth/resend-otp', { method: 'POST', ...json({ email }) })),
   forgotPassword: async (email: string) => data(await request<unknown>('/auth/forget', { method: 'POST', ...json({ email }) })),
   resetPassword: async (body: Record<string, unknown>) => data(await request<unknown>('/auth/reset-password', { method: 'POST', ...json(body) })),
-  profile: async () => {
-    const response = await request<User | { u?: User }>('/users')
+  profile: async (silent = false) => {
+    const response = await request<User | { u?: User }>('/users', { suppressErrorSnackbar: silent })
     return (response.data as { u?: User }).u || response.data as User
   },
   updateProfile: async (body: Record<string, unknown>, avatar?: File) => {

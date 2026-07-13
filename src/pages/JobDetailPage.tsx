@@ -85,7 +85,7 @@ export function JobDetailPage() {
     ]).then(([nextJob, nextApps, myApps]) => {
       setJob(nextJob)
       setApplications(nextApps as Application[])
-      const mine = (myApps as Application[]).find(application => (typeof application.jobId === 'object' ? application.jobId._id : application.jobId) === id)
+      const mine = (myApps as Application[]).find(application => (application.jobId && typeof application.jobId === 'object' ? application.jobId._id : application.jobId) === id)
       setMyApplication(mine || null)
     }).catch(caught => setLoadError(caught instanceof Error ? caught.message : 'Could not load job')).finally(() => setLoading(false))
   }, [id, homeowner])
