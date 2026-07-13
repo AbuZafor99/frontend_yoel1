@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -27,6 +27,11 @@ export function AuthPage() {
   const { user, login, googleLogin, register } = useAuth()
   const [mode, setMode] = useState<AuthMode>(params.get('mode') === 'register' ? 'register' : 'login')
   const [role, setRole] = useState<AuthRole>('homeowner')
+  // Held in a ref so the Google callback identity stays stable across role
+  // changes — otherwise picking a role re-renders the Google button (a visible
+  // "shake"). The role is only read at the moment a credential returns.
+  const roleRef = useRef(role)
+  roleRef.current = role
   const [email, setEmail] = useState('')
   const [form, setForm] = useState({ name: '', password: '', confirmPassword: '', phone: '', address: '', otp: '' })
   const [busy, setBusy] = useState(false)
@@ -71,7 +76,7 @@ export function AuthPage() {
     setBusy(true)
     setBusyLabel('Connecting your Google account…')
     try {
-      await googleLogin(credential, role)
+      await googleLogin(credential, roleRef.current)
       showSnackbar('Signed in with Google successfully.', 'success')
       navigate('/dashboard')
     } catch {
@@ -79,7 +84,7 @@ export function AuthPage() {
     } finally {
       setBusy(false)
     }
-  }, [googleLogin, navigate, role])
+  }, [googleLogin, navigate])
 
   const handleGoogleError = useCallback((message: string) => showSnackbar(message), [])
 
