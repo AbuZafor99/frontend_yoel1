@@ -85,7 +85,7 @@ export function JobProgressPage() {
         <div><span>{stage >= 3 ? 'Completed' : paymentRequired ? 'Action required' : `Stage ${stage} of 3`}</span><h2>{statusCopy.title}</h2><p>{statusCopy.text}</p></div>
         {paymentRequired && isAssigned && <button className="button button-primary" onClick={() => setPaymentOpen(true)}><Icon name="creditCard" size={17}/> Pay $10 and activate</button>}
         {canAdvance && <button className="button button-primary" disabled={updating} onClick={advance}>{updating ? <><span className="button-spinner"/> Updating…</> : <>{nextStage === 1 ? 'Start service' : nextStage === 2 ? 'Mark in progress' : 'Complete service'} <Icon name="arrow" size={16}/></>}</button>}
-        {stage >= 3 && homeowner && <Link className="button button-primary" to={`/jobs/${job._id}`}>Leave a review <Icon name="arrow" size={16}/></Link>}
+        {stage >= 3 && canAccess && <Link className="button button-primary" to={`/jobs/${job._id}`}>Leave a review <Icon name="arrow" size={16}/></Link>}
       </section>
 
       <section className="progress-tracker-card">

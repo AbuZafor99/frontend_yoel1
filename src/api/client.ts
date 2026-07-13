@@ -1,4 +1,4 @@
-import type { Application, CarouselItem, Category, ContactStatus, Conversation, Job, Message, Notification, PaymentIntent, User } from '../types'
+import type { Application, CarouselItem, Category, ContactStatus, Conversation, Job, Message, Notification, PaymentIntent, Review, User } from '../types'
 import { showSnackbar } from '../components/FeedbackHost'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://api.zentrofix.com/api/v1').replace(/\/$/, '')
@@ -86,6 +86,7 @@ export const api = {
   notifications: async () => data(await request<Notification[]>('/notifications')),
   markAllRead: async () => data(await request<unknown>('/notifications/read-all', { method: 'PATCH' })),
   reviews: async (jobId: string, stars: number, text: string) => data(await request<unknown>(`/reviews/jobs/${jobId}`, { method: 'POST', ...json({ stars, text }) })),
+  jobReviews: async (jobId: string) => data(await request<Review[]>(`/reviews?jobId=${jobId}`)),
 }
 
 export const apiBase = API_BASE

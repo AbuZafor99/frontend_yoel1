@@ -70,6 +70,18 @@ export type Application = {
   tradespersonId?: User | string
 }
 
+export type Review = {
+  _id: string
+  jobId: string
+  userId: string
+  tradespersonId: string
+  revieweeId: string
+  reviewerRole: 'user' | 'tradesperson'
+  stars: number
+  text?: string
+  createdAt?: string
+}
+
 export type Category = { _id: string; name: string; image?: string }
 export type CarouselItem = {
   _id: string

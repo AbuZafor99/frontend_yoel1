@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { isHomeowner, useAuth } from '../context/AuthContext'
-import type { Application, Job } from '../types'
+import type { Application, Job, Review } from '../types'
 import { Modal } from '../components/Modal'
 import { statusLabel } from '../components/JobCard'
 import { GoogleJobMap } from '../components/GoogleJobMap'
@@ -11,28 +11,35 @@ import { Icon } from '../components/Icon'
 import { AppLoader } from '../components/AppLoader'
 import { showSnackbar } from '../components/FeedbackHost'
 
-function ApplyModal({ job, onClose, onDone }: { job: Job; onClose: () => void; onDone: () => void }) {
+function ApplyModal({ job, onClose, onDone }: { job: Job; onClose: () => void; onDone: (application: Application) => void }) {
   const [price, setPrice] = useState('')
   const [date, setDate] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true)
-    try { await api.apply(job._id, { price: Number(price), estimatedStartDate: date || undefined, additionalInfo: info }); onDone() }
+    try { const application = await api.apply(job._id, { price: Number(price), estimatedStartDate: date || undefined, additionalInfo: info }); onDone(application) }
     catch { /* API failures are presented by the global snackbar. */ }
     finally { setBusy(false) }
   }
   return <Modal title="Apply for this job" onClose={onClose}><p className="muted">Keep your quote clear and personal contact details inside Zentrofix.</p><form onSubmit={submit} className="form-grid"><label>Your quote<input required type="number" min="0" value={price} onChange={event => setPrice(event.target.value)} placeholder="Amount" /></label><label>Estimated start<input type="date" value={date} onChange={event => setDate(event.target.value)} /></label><label className="span-2">Message<textarea required value={info} onChange={event => setInfo(event.target.value)} placeholder="Tell the homeowner why you’re a good fit" /></label><button className="button button-primary span-2" disabled={busy}>{busy ? <><span className="button-spinner"/> Sending…</> : 'Send application'}</button></form></Modal>
 }
 
-function ReviewForm({ job }: { job: Job }) {
+function ReviewForm({ job, onSubmitted }: { job: Job; onSubmitted: (review: Review) => void }) {
   const [stars, setStars] = useState(5)
   const [text, setText] = useState('')
-  const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
-  const submit = async (event: React.FormEvent) => { event.preventDefault(); setBusy(true); try { await api.reviews(job._id, stars, text); setSent(true); showSnackbar('Thanks for sharing your feedback.', 'success') } catch { /* Global snackbar handles the error. */ } finally { setBusy(false) } }
-  if (sent) return <div className="notice success-notice">Thanks for sharing your feedback.</div>
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); setBusy(true); try { const review = await api.reviews(job._id, stars, text); onSubmitted(review as unknown as Review); showSnackbar('Thanks for sharing your feedback.', 'success') } catch { /* Global snackbar handles the error. */ } finally { setBusy(false) } }
   return <form className="review-form" onSubmit={submit}><span className="eyebrow">Leave a review</span><div className="stars">{[1,2,3,4,5].map(value => <button type="button" key={value} onClick={() => setStars(value)} className={value <= stars ? 'star selected' : 'star'}>★</button>)}</div><textarea required value={text} onChange={event => setText(event.target.value)} placeholder="How did the work go?"/><button className="button button-primary" disabled={busy}>{busy ? 'Submitting…' : 'Submit review'}</button></form>
+}
+
+function MyReviewCard({ review }: { review: Review }) {
+  return <div className="review-form submitted-review"><span className="eyebrow">Your review</span><div className="stars readonly">{[1,2,3,4,5].map(value => <span key={value} className={value <= review.stars ? 'star selected' : 'star'}>★</span>)}</div>{review.text && <p className="submitted-review-text">{review.text}</p>}<div className="notice success-notice">Thanks for sharing your feedback.</div></div>
+}
+
+function MyApplicationCard({ application }: { application: Application }) {
+  const labels: Record<string, string> = { pending: 'Awaiting response', lost: 'Not selected', active: 'Accepted' }
+  return <div className="notice my-application-card"><div className="my-application-head"><span className="eyebrow">Your application</span><span className={`status status-${application.status}`}>{labels[application.status] || application.status}</span></div><strong>{application.price ? `£${application.price}` : 'Quote pending'}</strong>{application.estimatedStartDate && <small>Available from {new Date(application.estimatedStartDate).toLocaleDateString()}</small>}<p>{application.additionalInfo || 'No additional message supplied.'}</p></div>
 }
 
 function ApplicantInfoModal({ application, jobId, onClose }: { application: Application; jobId: string; onClose: () => void }) {
@@ -60,21 +67,46 @@ export function JobDetailPage() {
   const homeowner = isHomeowner(user?.role)
   const [job, setJob] = useState<Job | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
+  const [myApplication, setMyApplication] = useState<Application | null>(null)
+  const [myReview, setMyReview] = useState<Review | null>(null)
   const [applyOpen, setApplyOpen] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { Promise.all([api.job(id), homeowner ? api.applicants(id) : Promise.resolve([])]).then(([nextJob,nextApps]) => { setJob(nextJob); setApplications(nextApps as Application[]) }).catch(caught => setLoadError(caught instanceof Error ? caught.message : 'Could not load job')).finally(() => setLoading(false)) }, [id,homeowner])
+  useEffect(() => {
+    setLoading(true)
+    Promise.all([
+      api.job(id),
+      homeowner ? api.applicants(id) : Promise.resolve([]),
+      // A tradesperson's own application record isn't in the job payload, so we
+      // fetch their applications separately to know if they've already applied
+      // (and to their price/message) instead of showing a re-apply form.
+      !homeowner ? api.applications().catch(() => []) : Promise.resolve([]),
+    ]).then(([nextJob, nextApps, myApps]) => {
+      setJob(nextJob)
+      setApplications(nextApps as Application[])
+      const mine = (myApps as Application[]).find(application => (typeof application.jobId === 'object' ? application.jobId._id : application.jobId) === id)
+      setMyApplication(mine || null)
+    }).catch(caught => setLoadError(caught instanceof Error ? caught.message : 'Could not load job')).finally(() => setLoading(false))
+  }, [id, homeowner])
+
+  useEffect(() => {
+    if (!job || job.status !== 'completed') { setMyReview(null); return }
+    api.jobReviews(job._id).then(reviews => setMyReview(reviews.find(review => review.userId === user?._id) || null)).catch(() => undefined)
+  }, [job?._id, job?.status, user?._id])
+
   if (loading) return <AppLoader label="Loading job details…" />
   if (!job) return <div className="center-state"><p>{loadError || 'Job not found'}</p><Link className="text-link" to="/jobs">Back to jobs</Link></div>
 
   const owner = job.userId && typeof job.userId === 'object' ? job.userId : undefined
+  const ownerId = job.userId && typeof job.userId === 'object' ? job.userId._id : job.userId
   const assigned = job.tradePerson && typeof job.tradePerson === 'object' ? job.tradePerson : undefined
   const assignedId = job.tradePerson && typeof job.tradePerson === 'object' ? job.tradePerson._id : job.tradePerson
-  const canApply = !homeowner && job.status === 'pending'
+  const canApply = !homeowner && job.status === 'pending' && !myApplication
   const progressStatuses = ['awarded','active','started','ongoing','in_progress','completed']
   const showProgress = progressStatuses.includes(job.status || '') && (homeowner || assignedId === user?._id)
   const cancellable = homeowner && ['pending','open_to_quotes','awarded'].includes(job.status || 'pending')
+  const isReviewParty = job.status === 'completed' && (homeowner ? ownerId === user?._id : assignedId === user?._id)
 
   const decide = async (application: Application, action: 'accept' | 'decline') => {
     try {
@@ -94,16 +126,17 @@ export function JobDetailPage() {
         <section className="detail-section"><h2>About this job</h2><p className="detail-description">{job.description || 'No additional description provided.'}</p>{job.media?.length ? <div className="media-strip">{job.media.map(url => <img key={url} src={url} alt="Job attachment"/>)}</div> : null}</section>
         <section className="detail-section"><GoogleJobMap job={job}/></section>
         {homeowner && <section className="detail-section"><h2>Applications and offers</h2><p className="muted">Review each professional’s profile and quote. Contact details remain protected until award and payment.</p><ApplicantList applications={applications} jobId={job._id} onDecision={decide}/></section>}
-        {!homeowner && !showProgress && <section className="detail-section"><div className="notice">Progress tracking becomes available if the homeowner accepts your offer.</div></section>}
-        {homeowner && job.status === 'completed' && <section className="detail-section"><ReviewForm job={job}/></section>}
+        {!homeowner && myApplication && !showProgress && <section className="detail-section"><MyApplicationCard application={myApplication}/></section>}
+        {!homeowner && !showProgress && !myApplication && <section className="detail-section"><div className="notice">Progress tracking becomes available if the homeowner accepts your offer.</div></section>}
+        {isReviewParty && <section className="detail-section">{myReview ? <MyReviewCard review={myReview}/> : <ReviewForm job={job} onSubmitted={setMyReview}/>}</section>}
       </article>
       <aside className="detail-sidebar">
-        <div className="price-card"><span className="eyebrow">Budget / quote</span><strong>{job.budget ? `£${job.budget}` : 'Open to quotes'}</strong><small>{job.paymentStatus === 'paid' ? 'Platform fee paid · Contact unlocked' : job.status === 'awarded' ? 'Awarded · Awaiting platform fee' : 'Discuss details in messages'}</small>{!homeowner && <button className="button button-primary full-button" disabled={!canApply} onClick={() => setApplyOpen(true)}>{canApply ? 'Apply for this job' : assignedId === user?._id ? 'Your offer was accepted' : 'Applications closed'}</button>}{cancellable && <button className="button button-ghost full-button" onClick={() => api.updateJobStatus(job._id,'cancelled').then(next => { setJob(next); showSnackbar('Job cancelled.', 'success') }).catch(() => undefined)}>Cancel job</button>}</div>
+        <div className="price-card"><span className="eyebrow">Budget / quote</span><strong>{job.budget ? `£${job.budget}` : 'Open to quotes'}</strong><small>{job.paymentStatus === 'paid' ? 'Platform fee paid · Contact unlocked' : job.status === 'awarded' ? 'Awarded · Awaiting platform fee' : 'Discuss details in messages'}</small>{!homeowner && <button className="button button-primary full-button" disabled={!canApply} onClick={() => setApplyOpen(true)}>{assignedId === user?._id ? 'Your offer was accepted' : myApplication?.status === 'pending' ? 'Application submitted' : myApplication?.status === 'lost' ? 'Not selected' : canApply ? 'Apply for this job' : 'Applications closed'}</button>}{cancellable && <button className="button button-ghost full-button" onClick={() => api.updateJobStatus(job._id,'cancelled').then(next => { setJob(next); showSnackbar('Job cancelled.', 'success') }).catch(() => undefined)}>Cancel job</button>}</div>
         {!homeowner && owner && <RestrictedContactPanel jobId={job._id} fallbackName={owner.name} profileImage={owner.profileImage?.url}/>} 
         {homeowner && assignedId && <RestrictedContactPanel jobId={job._id} tradespersonId={assignedId} fallbackName={assigned?.name} profileImage={assigned?.profileImage?.url}/>} 
         <div className="info-card"><span className="eyebrow">Safety first</span><h3>Keep your work on Zentrofix.</h3><p>Use platform messaging. Phone and email are automatically unlocked only after award and payment.</p></div>
       </aside>
     </div>
-    {applyOpen && <ApplyModal job={job} onClose={() => setApplyOpen(false)} onDone={() => { setApplyOpen(false); showSnackbar('Application sent. The homeowner will review your quote.', 'success') }}/>} 
+    {applyOpen && <ApplyModal job={job} onClose={() => setApplyOpen(false)} onDone={application => { setMyApplication(application); setApplyOpen(false); showSnackbar('Application sent. The homeowner will review your quote.', 'success') }}/>}
   </>
 }
