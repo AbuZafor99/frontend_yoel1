@@ -91,14 +91,20 @@ export function JobProgressPage() {
       <section className="progress-tracker-card">
         <div className="progress-tracker-heading"><div><h2>Service timeline</h2><p>Updates are shared with both parties as the work moves forward.</p></div><strong>{Math.round((stage / 3) * 100)}%</strong></div>
         <div className="progress-track"><i style={{ width: `${(stage / 3) * 100}%` }}/></div>
-        <div className="progress-step-list">{progressSteps.map(step => {
-          const complete = stage >= step.stage
-          const current = stage === step.stage && stage < 3
-          return <article className={`${complete ? 'complete' : ''} ${current ? 'current' : ''}`} key={step.stage}>
-            <span>{complete ? <Icon name="check" size={18}/> : <Icon name={step.icon} size={18}/>}</span>
-            <div><h3>{step.title}</h3><p>{step.text}</p></div>
-            <b>{complete ? step.stage === stage && stage < 3 ? 'Current' : 'Completed' : 'Upcoming'}</b>
-          </article>
+        <div className="progress-timeline">{progressSteps.map((step, index) => {
+          const done = stage > step.stage || (stage >= 3 && step.stage === 3)
+          const current = !done && stage === step.stage
+          const state = done ? 'done' : current ? 'current' : 'upcoming'
+          return <div className={`timeline-step ${state}`} key={step.stage}>
+            <div className="timeline-marker">
+              <span className="timeline-node">{done ? <Icon name="check" size={16}/> : current ? <i className="timeline-pulse"/> : null}</span>
+              {index < progressSteps.length - 1 && <i className="timeline-connector"/>}
+            </div>
+            <div className="timeline-content">
+              <div className="timeline-step-head"><h3>{step.title}</h3><b>{done ? 'Completed' : current ? 'In progress' : 'Upcoming'}</b></div>
+              <p>{step.text}</p>
+            </div>
+          </div>
         })}</div>
       </section>
 
