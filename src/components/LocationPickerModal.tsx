@@ -10,6 +10,7 @@ type LeafletMap = {
   setView: (point: [number, number], zoom: number, options?: { animate?: boolean }) => LeafletMap
   getCenter: () => LeafletPoint
   on: (event: string, callback: () => void) => LeafletMap
+  invalidateSize: (animate?: boolean) => LeafletMap
   remove: () => void
 }
 type LeafletApi = {
@@ -96,6 +97,12 @@ export function LocationPickerModal({ initialAddress = '', initialLatitude, init
       })
       map.current = nextMap
       setMapLoading(false)
+      // Leaflet measures the container on creation. This picker mounts during a
+      // route transition, so the container often isn't at full height yet and
+      // the map renders tiles for only a small area (grey gaps around it).
+      // Re-measure on the next frame and again after the transition settles.
+      requestAnimationFrame(() => nextMap.invalidateSize())
+      window.setTimeout(() => nextMap.invalidateSize(), 350)
       if (initialLatitude === undefined || initialLongitude === undefined) useCurrentLocation()
     }).catch(() => {
       if (!active) return
