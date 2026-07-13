@@ -50,7 +50,11 @@ export const api = {
     const response = await request<User | { u?: User }>('/users')
     return (response.data as { u?: User }).u || response.data as User
   },
-  updateProfile: async (body: Record<string, unknown>) => data(await request<User>('/users/update-profile', { method: 'PUT', ...json(body) })),
+  updateProfile: async (body: Record<string, unknown>, avatar?: File) => {
+    if (!avatar) return data(await request<User>('/users/update-profile', { method: 'PUT', ...json(body) }))
+    const form = new FormData(); Object.entries(body).forEach(([key, value]) => value !== undefined && form.append(key, String(value))); form.append('avatar', avatar)
+    return data(await request<User>('/users/update-profile', { method: 'PUT', body: form }))
+  },
   updateLocation: async (body: { latitude: number; longitude: number; address: string }) => data(await request<User>('/users/location', { method: 'PUT', ...json(body) })),
   categories: async () => data(await request<Category[]>('/categories')),
   carousels: async (silent = false) => data(await request<{ items: CarouselItem[]; count?: number }>('/carousels', { suppressErrorSnackbar: silent })),

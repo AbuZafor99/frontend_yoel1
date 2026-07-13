@@ -1,4 +1,4 @@
-type IconName = 'home' | 'search' | 'briefcase' | 'bell' | 'user' | 'map' | 'target' | 'logout' | 'shield' | 'users' | 'lock' | 'heart' | 'message' | 'calendar' | 'star' | 'filter' | 'arrow' | 'plus' | 'check' | 'sparkle' | 'clock' | 'mail' | 'phone' | 'creditCard' | 'flag'
+type IconName = 'home' | 'search' | 'briefcase' | 'bell' | 'user' | 'map' | 'target' | 'logout' | 'shield' | 'users' | 'lock' | 'heart' | 'message' | 'calendar' | 'star' | 'filter' | 'arrow' | 'plus' | 'check' | 'sparkle' | 'clock' | 'mail' | 'phone' | 'creditCard' | 'flag' | 'camera'
 
 export function Icon({ name, size = 20, strokeWidth = 1.9, className }: { name: IconName; size?: number; strokeWidth?: number; className?: string }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, className, 'aria-hidden': true }
@@ -28,6 +28,7 @@ export function Icon({ name, size = 20, strokeWidth = 1.9, className }: { name: 
     phone: <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/>,
     creditCard: <><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h3"/></>,
     flag: <><path d="M5 22V4"/><path d="M5 4h11l-1.5 4L16 12H5"/></>,
+    camera: <><path d="M4 8a2 2 0 0 1 2-2h1.5l1.2-1.8A1 1 0 0 1 9.5 4h5a1 1 0 0 1 .8.4L16.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></>,
   }
   return <svg {...common}>{paths[name]}</svg>
 }
