@@ -1,0 +1,79 @@
+/* Visual polish layer — loaded last so it refines the base styles.
+   Covers: structured skeleton loaders, modal + snackbar motion, staggered
+   card entrances, layered shadows, press states and keyboard focus rings. */
+
+/* ---------- Structured skeleton loaders ---------- */
+.skeleton-host { pointer-events: none; }
+.skeleton-card { overflow: hidden; border: 1px solid #e4eaf2; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(16,42,73,.04), 0 8px 22px rgba(16,42,73,.05); }
+.skeleton-block { position: relative; display: block; overflow: hidden; border-radius: 7px; background: #e9eef5; }
+.skeleton-block::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent); animation: skeleton-sweep 1.35s ease-in-out infinite; }
+.skeleton-media { height: 150px; border-radius: 0; }
+.skeleton-card-body { display: grid; gap: 10px; padding: 16px; }
+.skeleton-line { height: 10px; }
+.skeleton-line.lg { height: 15px; }
+.skeleton-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 12px; border-top: 1px solid #eef2f7; }
+.skeleton-foot .skeleton-line { flex: 0 0 auto; }
+.skeleton-row { display: flex; align-items: center; gap: 16px; padding: 16px; }
+.skeleton-thumb { width: 104px; height: 90px; flex: 0 0 auto; border-radius: 12px; }
+.skeleton-row-copy { min-width: 0; flex: 1; display: grid; gap: 10px; }
+.skeleton-row-copy .skeleton-foot { border-top: 0; padding-top: 2px; margin-top: 2px; }
+@keyframes skeleton-sweep { to { transform: translateX(100%); } }
+
+/* ---------- Modal motion ---------- */
+.modal-backdrop { animation: backdrop-in .22s ease both; }
+.modal { animation: modal-in .3s cubic-bezier(.2,.72,.24,1) both; }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-in { from { opacity: 0; transform: translateY(16px) scale(.965); } to { opacity: 1; transform: none; } }
+
+/* ---------- Snackbar exit ---------- */
+.global-snackbar.leaving { animation: snackbar-exit .2s ease both; }
+@keyframes snackbar-exit { to { opacity: 0; transform: translateY(10px) scale(.98); } }
+
+/* ---------- Staggered card entrances ---------- */
+.discover-job-grid > .app-job-card,
+.jobs-horizontal-rail > .app-job-card,
+.my-jobs-list > .my-job-card,
+.notification-list > .notification,
+.public-job-grid > .app-job-card { animation: card-enter .45s cubic-bezier(.2,.72,.24,1) both; }
+.discover-job-grid > :nth-child(1), .my-jobs-list > :nth-child(1), .notification-list > :nth-child(1), .jobs-horizontal-rail > :nth-child(1), .public-job-grid > :nth-child(1) { animation-delay: .02s; }
+.discover-job-grid > :nth-child(2), .my-jobs-list > :nth-child(2), .notification-list > :nth-child(2), .jobs-horizontal-rail > :nth-child(2), .public-job-grid > :nth-child(2) { animation-delay: .06s; }
+.discover-job-grid > :nth-child(3), .my-jobs-list > :nth-child(3), .notification-list > :nth-child(3), .jobs-horizontal-rail > :nth-child(3), .public-job-grid > :nth-child(3) { animation-delay: .1s; }
+.discover-job-grid > :nth-child(4), .my-jobs-list > :nth-child(4), .notification-list > :nth-child(4), .jobs-horizontal-rail > :nth-child(4), .public-job-grid > :nth-child(4) { animation-delay: .14s; }
+.discover-job-grid > :nth-child(5), .my-jobs-list > :nth-child(5), .notification-list > :nth-child(5), .jobs-horizontal-rail > :nth-child(5), .public-job-grid > :nth-child(5) { animation-delay: .18s; }
+.discover-job-grid > :nth-child(6), .my-jobs-list > :nth-child(6), .notification-list > :nth-child(6), .jobs-horizontal-rail > :nth-child(6), .public-job-grid > :nth-child(6) { animation-delay: .22s; }
+.discover-job-grid > :nth-child(n+7), .my-jobs-list > :nth-child(n+7), .notification-list > :nth-child(n+7), .jobs-horizontal-rail > :nth-child(n+7), .public-job-grid > :nth-child(n+7) { animation-delay: .26s; }
+@keyframes card-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Layered, softer shadows ---------- */
+.app-job-card, .my-job-card { box-shadow: 0 1px 2px rgba(16,42,73,.05), 0 8px 24px rgba(16,42,73,.07); }
+.app-job-card:hover { box-shadow: 0 2px 4px rgba(16,42,73,.06), 0 18px 40px rgba(16,42,73,.14); }
+.my-job-card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(16,42,73,.06), 0 16px 36px rgba(16,42,73,.12); }
+.my-job-card { transition: transform .24s cubic-bezier(.2,.72,.24,1), box-shadow .24s cubic-bezier(.2,.72,.24,1), border-color .24s; }
+.zentro-shell .panel, .recent-message-section, .why-section { box-shadow: 0 1px 2px rgba(16,42,73,.04), 0 10px 30px rgba(16,42,73,.06); }
+.modal { box-shadow: 0 8px 24px rgba(4,18,39,.14), 0 32px 80px rgba(4,18,39,.28); }
+.app-web-header { box-shadow: 0 1px 0 rgba(11,35,67,.05), 0 8px 24px rgba(18,45,78,.06); }
+
+/* Job-card images fade in as they load. */
+.app-job-image img, .my-job-card-main > img { animation: media-in .45s ease both; }
+@keyframes media-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Micro-interactions ---------- */
+.button:active:not(:disabled) { transform: translateY(0) scale(.98); }
+.app-nav-item:active, .mobile-nav-item:active, .tab:active, .app-segment-tabs button:active { transform: scale(.97); }
+.app-segment-tabs button, .app-category-chips button, .carousel-dots button, .tab { transition: background .2s ease, color .2s ease, border-color .2s ease, transform .15s ease; }
+.header-post-job, .header-logout, .header-location, .header-user { transition: background .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.close-button { transition: background .18s ease, color .18s ease; }
+.close-button:hover { color: #b42318; background: #fff0f0; }
+.empty-state { animation: card-enter .4s cubic-bezier(.2,.72,.24,1) both; }
+
+/* Keyboard focus rings — visible only for keyboard navigation. */
+a:focus-visible, button:focus-visible { outline: 2px solid rgba(37,99,235,.8); outline-offset: 2px; border-radius: 6px; }
+.button:focus-visible, .app-nav-item:focus-visible, .mobile-nav-item:focus-visible { border-radius: 11px; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block::after, .modal, .modal-backdrop, .global-snackbar.leaving,
+  .discover-job-grid > *, .jobs-horizontal-rail > *, .my-jobs-list > *, .notification-list > *, .public-job-grid > *,
+  .app-job-image img, .my-job-card-main > img, .empty-state { animation: none !important; }
+  .my-job-card, .app-segment-tabs button, .app-category-chips button { transition: none !important; }
+}

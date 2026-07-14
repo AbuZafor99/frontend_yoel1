@@ -6,7 +6,7 @@ import type { Application, Category, Job } from '../types'
 import { JobCard, MyJobCard } from '../components/JobCard'
 import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/Icon'
-import { AppLoader } from '../components/AppLoader'
+import { SkeletonGrid, SkeletonList } from '../components/Skeleton'
 
 type ListedJob = { job: Job; applicationStatus?: string }
 
@@ -75,7 +75,7 @@ export function JobsPage() {
     <div className="app-segment-tabs">{tabs.map(([value, label]) => <button key={value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}</div>
     {pageView === 'discover' && <div className="app-category-chips">{categories.slice(0, 8).map(category => <button key={category._id} onClick={() => setQuery(category.name)}>{category.name}</button>)}</div>}
 
-    {loading ? <AppLoader label="Loading jobs…" /> : visible.length ? pageView === 'my'
+    {loading ? (pageView === 'my' ? <SkeletonList /> : <SkeletonGrid />) : visible.length ? pageView === 'my'
       ? <div className="my-jobs-list">{visible.map(({ job, applicationStatus }) => <MyJobCard key={`${job._id}-${applicationStatus || ''}`} job={job} applicationStatus={applicationStatus} />)}</div>
       : <div className="discover-job-grid">{visible.map(({ job }) => <JobCard key={job._id} job={job} progressAware={homeowner} />)}</div>
       : <EmptyState icon="▣" title={error ? 'Jobs could not be loaded' : 'No matching jobs'} text={error ? 'Please try again in a moment.' : 'Try a different filter or search phrase.'} action={<button className="button button-ghost" onClick={() => { setQuery(''); setTab('all') }}>Clear filters</button>} />}

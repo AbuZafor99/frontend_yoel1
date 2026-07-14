@@ -11,24 +11,56 @@ export class ApiError extends Error {
 type ApiResponse<T> = { success?: boolean; message?: string; data: T; meta?: Record<string, unknown> }
 type RequestOptions = RequestInit & { suppressErrorSnackbar?: boolean }
 
+const REQUEST_TIMEOUT_MS = 25000
+
+// Friendly fallbacks for responses where the backend sends no usable message.
+const statusFallback = (status: number) => {
+  if (status === 401) return 'Your session has expired. Please sign in again.'
+  if (status === 403) return 'You don’t have permission to do that.'
+  if (status === 404) return 'We couldn’t find what you were looking for.'
+  if (status === 429) return 'Too many requests right now. Please wait a moment and try again.'
+  if (status >= 500) return 'Zentrofix is having a moment. Please try again shortly.'
+  return 'The request could not be completed. Please try again.'
+}
+
 async function request<T>(path: string, init: RequestOptions = {}): Promise<ApiResponse<T>> {
   const { suppressErrorSnackbar = false, ...fetchInit } = init
   const token = localStorage.getItem('zentrofix_access_token')
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    const message = 'You appear to be offline. Check your connection and try again.'
+    if (!suppressErrorSnackbar) showSnackbar(message)
+    throw new ApiError(message, 0)
+  }
   const headers = new Headers(fetchInit.headers)
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
   if (fetchInit.body && !(fetchInit.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (token) headers.set('Authorization', `Bearer ${token}`)
+  const timeout = new AbortController()
+  const timer = window.setTimeout(() => timeout.abort(), REQUEST_TIMEOUT_MS)
   let response: Response
   try {
-    response = await fetch(`${API_BASE}${path}`, { ...fetchInit, headers, credentials: 'include' })
+    response = await fetch(`${API_BASE}${path}`, { ...fetchInit, headers, credentials: 'include', signal: fetchInit.signal || timeout.signal })
   } catch (caught) {
-    const message = caught instanceof Error && caught.message !== 'Failed to fetch' ? caught.message : 'Could not connect to Zentrofix. Check your connection and try again.'
+    const message = timeout.signal.aborted
+      ? 'The request is taking longer than expected. Please try again.'
+      : caught instanceof Error && caught.name !== 'TypeError' && caught.message !== 'Failed to fetch'
+        ? caught.message
+        : 'Could not connect to Zentrofix. Check your connection and try again.'
     if (!suppressErrorSnackbar) showSnackbar(message)
     throw new ApiError(message, 0)
+  } finally {
+    window.clearTimeout(timer)
   }
   const payload = await response.json().catch(() => ({}))
   if (!response.ok || payload.success === false) {
-    const message = payload.message || 'The request could not be completed. Please try again.'
+    // A 401 while holding a token means the session is no longer valid —
+    // announce it so AuthContext can sign out and route to the login screen,
+    // and skip the raw error snackbar since the redirect explains it.
+    if (response.status === 401 && token) {
+      window.dispatchEvent(new Event('zentrofix:session-expired'))
+      throw new ApiError(statusFallback(401), 401)
+    }
+    const message = payload.message || statusFallback(response.status)
     if (!suppressErrorSnackbar) showSnackbar(message)
     throw new ApiError(message, response.status)
   }

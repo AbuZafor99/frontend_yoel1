@@ -27,7 +27,7 @@ export function JobCard({ job, compact = false, applicationStatus, progressAware
   const progressStatuses = ['awarded', 'active', 'started', 'ongoing', 'in_progress', 'completed']
   const destination = progressAware && progressStatuses.includes(status) ? `/jobs/${job._id}/progress` : `/jobs/${job._id}`
   return <Link to={destination} className={`app-job-card ${compact ? 'compact' : ''}`}>
-    <div className="app-job-image"><img src={jobImage(job)} alt="" /><span className={`status status-${status}`}>{statusLabel(status)}</span></div>
+    <div className="app-job-image"><img src={jobImage(job)} alt="" loading="lazy" /><span className={`status status-${status}`}>{statusLabel(status)}</span></div>
     <div className="app-job-card-body">
       <small className="job-category">{categoryName(job)}</small>
       <h3>{job.title}</h3>
@@ -44,7 +44,7 @@ export function MyJobCard({ job, applicationStatus }: { job: Job; applicationSta
   const destination = progressStatuses.includes(status) || progressStatuses.includes(job.status || '') ? `/jobs/${job._id}/progress` : `/jobs/${job._id}`
   return <article className="my-job-card">
     <Link to={destination} className="my-job-card-main">
-      <img src={jobImage(job)} alt="" />
+      <img src={jobImage(job)} alt="" loading="lazy" />
       <div className="my-job-card-copy">
         <div className="my-job-card-heading"><h3>{job.title}</h3><span className={`status status-${status}`}>{statusLabel(status)}</span></div>
         <small className="job-category">{categoryName(job)}</small>

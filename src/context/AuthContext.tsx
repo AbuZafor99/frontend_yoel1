@@ -44,6 +44,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(profile => settle(() => saveUser(profile)))
       .catch(() => settle(() => { logout(); setSessionExpired(true) }))
   }, [saveUser, logout])
+  // Any API call that comes back 401 while we held a token announces this
+  // event — sign out immediately so Protected routes to the login screen with
+  // the "session expired" notice, instead of leaving stale data on screen.
+  useEffect(() => {
+    const expire = () => {
+      if (!localStorage.getItem('zentrofix_access_token') && !localStorage.getItem('zentrofix_user')) return
+      logout()
+      setSessionExpired(true)
+    }
+    window.addEventListener('zentrofix:session-expired', expire)
+    return () => window.removeEventListener('zentrofix:session-expired', expire)
+  }, [logout])
   return <AuthContext.Provider value={{ user, loading, sessionExpired, clearSessionExpired, login, googleLogin, register, logout, refresh }}>{children}</AuthContext.Provider>
 }
 export const useAuth = () => { const context = useContext(AuthContext); if (!context) throw new Error('useAuth must be used within AuthProvider'); return context }

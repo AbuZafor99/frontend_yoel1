@@ -7,7 +7,7 @@ import { JobCard } from '../components/JobCard'
 import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/Icon'
 import { HorizontalJobRail } from '../components/HorizontalJobRail'
-import { AppLoader } from '../components/AppLoader'
+import { SkeletonRail } from '../components/Skeleton'
 import { KycUnverifiedBanner } from '../components/KycBanner'
 
 const homeownerSlides: CarouselItem[] = [
@@ -95,7 +95,7 @@ export function DashboardPage() {
 
     <section className="home-section jobs-rail-section">
       <div className="app-section-title"><h2>{homeowner ? 'My Jobs' : 'Job Near You'}</h2><Link to={homeowner ? '/jobs?view=my' : '/jobs?view=discover'}>View All</Link></div>
-      {loading ? <AppLoader label={homeowner ? 'Loading your jobs…' : 'Finding jobs near you…'} /> : jobs.length ? <HorizontalJobRail label={homeowner ? 'My jobs' : 'Jobs near you'}>{jobs.slice(0, 10).map(job => <JobCard job={job} progressAware={homeowner} key={job._id} />)}</HorizontalJobRail> : <EmptyState title={error ? 'Jobs could not be loaded' : homeowner ? 'No jobs yet' : 'No nearby jobs yet'} text={error ? 'Please try again in a moment.' : homeowner ? 'Post your first job and local professionals can start responding.' : 'New work near your service area will appear here.'} action={homeowner ? <Link className="button button-primary" to="/jobs/new">Post a job</Link> : undefined} />}
+      {loading ? <SkeletonRail /> : jobs.length ? <HorizontalJobRail label={homeowner ? 'My jobs' : 'Jobs near you'}>{jobs.slice(0, 10).map(job => <JobCard job={job} progressAware={homeowner} key={job._id} />)}</HorizontalJobRail> : <EmptyState title={error ? 'Jobs could not be loaded' : homeowner ? 'No jobs yet' : 'No nearby jobs yet'} text={error ? 'Please try again in a moment.' : homeowner ? 'Post your first job and local professionals can start responding.' : 'New work near your service area will appear here.'} action={homeowner ? <Link className="button button-primary" to="/jobs/new">Post a job</Link> : undefined} />}
     </section>
 
     <RecentMessages conversations={conversations} userId={user?._id} />

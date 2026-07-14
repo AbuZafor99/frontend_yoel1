@@ -18,9 +18,11 @@ import { Modal } from './components/Modal'
 import { SplashScreen } from './components/SplashScreen'
 
 function Protected({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, sessionExpired } = useAuth()
   if (loading) return <SplashScreen />
-  return user ? <>{children}</> : <Navigate to="/auth" replace />
+  if (user) return <>{children}</>
+  // Carry the expired-session reason through so the login screen can say why.
+  return <Navigate to={sessionExpired ? '/auth?mode=login&reason=expired' : '/auth'} replace />
 }
 
 // Legal pages are reachable by signed-out visitors too, so they can't sit

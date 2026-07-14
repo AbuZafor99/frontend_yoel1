@@ -11,5 +11,6 @@ import './workflow.css'
 import './experience.css'
 import './guesthome.css'
 import './kyc.css'
+import './polish.css'
 
 createRoot(document.getElementById('root')!).render(<StrictMode><FeedbackHost><AppErrorBoundary><BrowserRouter><AuthProvider><App /></AuthProvider></BrowserRouter></AppErrorBoundary></FeedbackHost></StrictMode>)
