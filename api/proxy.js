@@ -1,5 +1,6 @@
 // Same-origin API proxy. The browser calls /api/v1/* on the frontend's own
-// domain; this edge function forwards the request to the Zentrofix API
+// domain; the vercel.json rewrite funnels those requests here with the API
+// path in ?path=, and this edge function forwards them to the Zentrofix API
 // server-to-server. Server-side requests carry no browser Origin header, so
 // the API's CORS allowlist (which doesn't include this Vercel domain) accepts
 // them — no backend change needed.
@@ -9,7 +10,18 @@ const API_ORIGIN = 'https://api.zentrofix.com'
 
 export default async function handler(request) {
   const url = new URL(request.url)
-  const target = `${API_ORIGIN}${url.pathname}${url.search}`
+  const path = url.searchParams.get('path')
+  if (!path) {
+    return new Response(JSON.stringify({ success: false, message: 'Missing API path.' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+    })
+  }
+  // The rewrite merges the browser's own query params (page, limit, …) with
+  // ?path=; strip path and forward the rest untouched.
+  url.searchParams.delete('path')
+  const search = url.searchParams.toString()
+  const target = `${API_ORIGIN}/api/v1/${path}${search ? `?${search}` : ''}`
 
   // Forward only the headers the API needs; dropping Origin/Referer/Host is
   // what lets the request pass the API's CORS check.
