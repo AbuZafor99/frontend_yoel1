@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { apiBase } from '../api/client'
+import { mediaOrigin } from '../api/client'
 import type { Job } from '../types'
 import { Icon } from './Icon'
 
@@ -14,10 +14,7 @@ export function statusLabel(status?: string) {
 export function jobImage(job: Job) {
   const source = job.media?.[0]
   if (source?.startsWith('http') || source?.startsWith('data:')) return source
-  if (source) {
-    const origin = new URL(apiBase).origin
-    return `${origin}${source.startsWith('/') ? '' : '/'}${source}`
-  }
+  if (source) return `${mediaOrigin}${source.startsWith('/') ? '' : '/'}${source}`
   const index = Array.from(job._id || job.title).reduce((total, char) => total + char.charCodeAt(0), 0) % fallbackImages.length
   return fallbackImages[index]
 }
