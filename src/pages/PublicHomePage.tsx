@@ -10,15 +10,10 @@ import { Footer } from '../components/Footer'
 // logged-out visitors. Browsing (banner carousel + latest jobs) works without an
 // account; anything account-scoped (a job's details) sends the visitor to login.
 
-// Backend-managed banners (ads/coupons) sometimes number fewer than 3 —
-// these branded fallback slides pad the carousel out so it never looks
-// sparse. They only fill gaps; real banners always come first.
-const fallbackBannerSlides: CarouselItem[] = [
-  { _id: 'fallback-1', title: 'The right professional for every job.', subtitle: 'Post your project and compare trusted local professionals in one place.', image: { url: '/app-assets/home1.png' } },
-  { _id: 'fallback-2', title: 'Great local jobs, matched to your skills.', subtitle: 'Tradespeople find nearby opportunities and grow their reputation.', image: { url: '/app-assets/home2.png' } },
-  { _id: 'fallback-3', title: 'Turn your to-do list into done.', subtitle: 'From quick repairs to bigger improvements, find reliable help near you.', image: { url: '/app-assets/home3.png' } },
-]
-const MIN_BANNER_SLIDES = 3
+// Shown only when the backend has zero active banners — a single branded
+// slide so the carousel section never renders completely empty.
+const defaultBannerSlide: CarouselItem = { _id: 'fallback-default', title: 'The right professional for every job.', subtitle: 'Post your project and compare trusted local professionals in one place.', image: { url: '/app-assets/home1.png' } }
+const MAX_BANNER_SLIDES = 3
 
 const whyChoose = [
   { icon: 'shield' as const, tone: 'blue', label: 'Quality Work You Can Trust' },
@@ -89,13 +84,15 @@ export function PublicHomePage() {
   const [jobsLoading, setJobsLoading] = useState(true)
 
   useEffect(() => {
+    // Show exactly what the backend has (capped at 3, matching the app's
+    // carousel) — no padding with placeholder slides. A single default slide
+    // only appears when there's nothing real to show at all.
     api.carousels(true)
       .then(response => {
-        const live = response.items || []
-        const padding = fallbackBannerSlides.slice(0, Math.max(0, MIN_BANNER_SLIDES - live.length))
-        setBanners([...live, ...padding])
+        const live = (response.items || []).slice(0, MAX_BANNER_SLIDES)
+        setBanners(live.length ? live : [defaultBannerSlide])
       })
-      .catch(() => setBanners(fallbackBannerSlides))
+      .catch(() => setBanners([defaultBannerSlide]))
     api.publicJobs('?page=1&limit=10', true)
       .then(setJobs)
       .catch(() => undefined)
