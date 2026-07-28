@@ -18,11 +18,12 @@ import { Modal } from './components/Modal'
 import { SplashScreen } from './components/SplashScreen'
 
 function Protected({ children }: { children: ReactNode }) {
-  const { user, loading, sessionExpired } = useAuth()
+  const { user, loading } = useAuth()
   if (loading) return <SplashScreen />
-  if (user) return <>{children}</>
-  // Carry the expired-session reason through so the login screen can say why.
-  return <Navigate to={sessionExpired ? '/auth?mode=login&reason=expired' : '/auth'} replace />
+  // No login wall: anyone without a session (never logged in, or their
+  // session just expired) lands on the public home page like any guest, with
+  // its own "Log In / Sign Up" links for when they're ready.
+  return user ? <>{children}</> : <Navigate to="/" replace />
 }
 
 // Legal pages are reachable by signed-out visitors too, so they can't sit
@@ -36,16 +37,14 @@ function MaybeShell({ children }: { children: ReactNode }) {
 
 // App-style startup gate for `/`: hold the animated splash while the session
 // resolves, then route —
-//  • valid saved session → straight to the role-aware dashboard
-//  • no session (including a dead/invalid token found on cold load) →
-//    the public landing page, same as any first-time visitor
-//  • sessionExpired only becomes true from a *mid-visit* sign-out (see
-//    AuthContext), so it won't fire here on a fresh load
+//  • valid saved session → straight to the role-aware dashboard (works for
+//    both homeowners and tradespeople; DashboardPage adapts by role)
+//  • no session, for any reason (first visit, logged out, or an expired
+//    token found on cold load) → the public landing page, never a login wall
 function RootGate() {
-  const { user, loading, sessionExpired } = useAuth()
+  const { user, loading } = useAuth()
   if (loading) return <SplashScreen />
   if (user) return <Navigate to="/dashboard" replace />
-  if (sessionExpired) return <Navigate to="/auth?mode=login&reason=expired" replace />
   return <PublicHomePage />
 }
 

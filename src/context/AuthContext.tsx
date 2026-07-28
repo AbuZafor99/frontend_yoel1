@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api } from '../api/client'
+import { showSnackbar } from '../components/FeedbackHost'
 import type { Role, User } from '../types'
 
-type AuthValue = { user: User | null; loading: boolean; sessionExpired: boolean; clearSessionExpired: () => void; login: (email: string, password: string) => Promise<void>; googleLogin: (idToken: string, role: 'homeowner' | 'tradesperson') => Promise<void>; register: (body: Record<string, unknown>) => Promise<void>; logout: () => void; refresh: () => Promise<void> }
+type AuthValue = { user: User | null; loading: boolean; login: (email: string, password: string) => Promise<void>; googleLogin: (idToken: string, role: 'homeowner' | 'tradesperson') => Promise<void>; register: (body: Record<string, unknown>) => Promise<void>; logout: () => void; refresh: () => Promise<void> }
 const AuthContext = createContext<AuthValue | null>(null)
 
 // Minimum time the branded splash stays visible on startup so a fast token
@@ -13,15 +14,6 @@ const MIN_SPLASH_MS = 1100
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => { try { return JSON.parse(localStorage.getItem('zentrofix_user') || 'null') } catch { return null } })
   const [loading, setLoading] = useState(true)
-  // True when a session that was active *during this visit* (the visitor was
-  // already looking at a protected page) got invalidated mid-use. Protected
-  // uses this to explain the redirect with a "please sign in again" notice.
-  // It is deliberately NOT set for a stale/invalid token found on cold load —
-  // someone arriving fresh with a dead token should see the normal public
-  // home page like any other guest, not get thrown at a login wall before
-  // they've done anything.
-  const [sessionExpired, setSessionExpired] = useState(false)
-  const clearSessionExpired = useCallback(() => setSessionExpired(false), [])
   // Every callback below is memoized with a stable (empty-dependency)
   // identity. Consumers like GoogleSignInButton re-run their setup effect
   // whenever the function they're given changes identity — without this,
@@ -43,25 +35,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (!localStorage.getItem('zentrofix_access_token')) { settle(); return }
     // Silent so a dead token found on cold load doesn't fire a raw error
-    // snackbar — it just quietly drops back to guest browsing (see the
-    // sessionExpired comment above for why this doesn't redirect to login).
+    // snackbar — it just quietly drops back to guest browsing, same as
+    // anyone else with no session.
     api.profile(true)
       .then(profile => settle(() => saveUser(profile)))
       .catch(() => settle(() => logout()))
   }, [saveUser, logout])
   // Any API call that comes back 401 while we held a token announces this
-  // event — sign out immediately so Protected routes to the login screen with
-  // the "session expired" notice, instead of leaving stale data on screen.
+  // event — sign out and fall back to guest browsing (Protected sends
+  // unauthenticated visitors to the public home page, never a login wall),
+  // with a snackbar explaining why they're back at the home screen.
   useEffect(() => {
     const expire = () => {
       if (!localStorage.getItem('zentrofix_access_token') && !localStorage.getItem('zentrofix_user')) return
       logout()
-      setSessionExpired(true)
+      showSnackbar('Your session has expired. Please sign in again.', 'info')
     }
     window.addEventListener('zentrofix:session-expired', expire)
     return () => window.removeEventListener('zentrofix:session-expired', expire)
   }, [logout])
-  return <AuthContext.Provider value={{ user, loading, sessionExpired, clearSessionExpired, login, googleLogin, register, logout, refresh }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, loading, login, googleLogin, register, logout, refresh }}>{children}</AuthContext.Provider>
 }
 export const useAuth = () => { const context = useContext(AuthContext); if (!context) throw new Error('useAuth must be used within AuthProvider'); return context }
 export const isHomeowner = (role?: Role) => role === 'homeowner' || role === 'user'
