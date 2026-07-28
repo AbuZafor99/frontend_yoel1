@@ -6,7 +6,7 @@
 // them — no backend change needed.
 export const config = { runtime: 'edge' }
 
-const API_ORIGIN = 'https://api.zentrofix.com'
+const API_ORIGIN = 'https://pr7m9mtd-5006.asse.devtunnels.ms'
 
 export default async function handler(request) {
   const url = new URL(request.url)

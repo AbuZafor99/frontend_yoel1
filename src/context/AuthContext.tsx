@@ -13,9 +13,13 @@ const MIN_SPLASH_MS = 1100
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => { try { return JSON.parse(localStorage.getItem('zentrofix_user') || 'null') } catch { return null } })
   const [loading, setLoading] = useState(true)
-  // True when a token was present at startup but the session could no longer be
-  // rehydrated (expired/invalid). The root gate uses this to send the visitor to
-  // the login screen instead of the guest landing page — matching the app.
+  // True when a session that was active *during this visit* (the visitor was
+  // already looking at a protected page) got invalidated mid-use. Protected
+  // uses this to explain the redirect with a "please sign in again" notice.
+  // It is deliberately NOT set for a stale/invalid token found on cold load —
+  // someone arriving fresh with a dead token should see the normal public
+  // home page like any other guest, not get thrown at a login wall before
+  // they've done anything.
   const [sessionExpired, setSessionExpired] = useState(false)
   const clearSessionExpired = useCallback(() => setSessionExpired(false), [])
   // Every callback below is memoized with a stable (empty-dependency)
@@ -38,11 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.setTimeout(() => { action?.(); setLoading(false) }, remaining)
     }
     if (!localStorage.getItem('zentrofix_access_token')) { settle(); return }
-    // Silent so an expired-token startup doesn't fire a raw error snackbar — the
-    // login redirect communicates it cleanly instead.
+    // Silent so a dead token found on cold load doesn't fire a raw error
+    // snackbar — it just quietly drops back to guest browsing (see the
+    // sessionExpired comment above for why this doesn't redirect to login).
     api.profile(true)
       .then(profile => settle(() => saveUser(profile)))
-      .catch(() => settle(() => { logout(); setSessionExpired(true) }))
+      .catch(() => settle(() => logout()))
   }, [saveUser, logout])
   // Any API call that comes back 401 while we held a token announces this
   // event — sign out immediately so Protected routes to the login screen with

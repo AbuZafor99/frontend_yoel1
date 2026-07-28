@@ -35,10 +35,12 @@ function MaybeShell({ children }: { children: ReactNode }) {
 }
 
 // App-style startup gate for `/`: hold the animated splash while the session
-// resolves, then route like the app's SplashScreenController —
+// resolves, then route —
 //  • valid saved session → straight to the role-aware dashboard
-//  • token present but expired/invalid → login screen
-//  • no session → the public landing page (guest browsing)
+//  • no session (including a dead/invalid token found on cold load) →
+//    the public landing page, same as any first-time visitor
+//  • sessionExpired only becomes true from a *mid-visit* sign-out (see
+//    AuthContext), so it won't fire here on a fresh load
 function RootGate() {
   const { user, loading, sessionExpired } = useAuth()
   if (loading) return <SplashScreen />
