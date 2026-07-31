@@ -7,7 +7,9 @@ import { showSnackbar } from '../components/FeedbackHost'
 // include this frontend's domain. Local dev (localhost is on that allowlist)
 // keeps calling the API directly.
 const DIRECT_API = 'https://pr7m9mtd-5006.asse.devtunnels.ms/api/v1'
-const API_BASE = (import.meta.env.PROD ? '/api/v1' : import.meta.env.VITE_API_BASE_URL || DIRECT_API).replace(/\/$/, '')
+const API_BASE = (
+  import.meta.env.VITE_API_BASE_URL || DIRECT_API
+).replace(/\/$/, '');
 
 // Absolute origin for media files (<img> sources aren't CORS-restricted, so
 // they always load straight from the API host).
